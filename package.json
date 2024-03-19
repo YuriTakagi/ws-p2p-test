@@ -1,0 +1,16 @@
+{
+  "scripts": {
+    "dev": "npx ts-node server/server.ts",
+    "build": "tsc client/client.ts --outDir client && tsc simple-client/simple-client.ts --outDir simple-client"
+  },
+  "devDependencies": {
+    "@types/uuid": "^9.0.8",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.2"
+  },
+  "dependencies": {
+    "@types/node": "^20.11.28",
+    "@types/ws": "^8.5.10",
+    "ws": "^8.16.0"
+  }
+}
