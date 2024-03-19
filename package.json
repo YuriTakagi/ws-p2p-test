@@ -1,7 +1,7 @@
 {
   "scripts": {
     "dev": "npx ts-node server/server.ts",
-    "build": "tsc client/client.ts --outDir client && tsc simple-client/simple-client.ts --outDir simple-client"
+    "build": "tsc client/client.ts --outDir client"
   },
   "devDependencies": {
     "@types/uuid": "^9.0.8",

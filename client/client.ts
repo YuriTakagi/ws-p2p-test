@@ -1,78 +1,150 @@
-// // WebSocketサーバーへの接続を確立
-// const signalingServer = new WebSocket("ws://localhost:8080");
-// const peerConnection = new RTCPeerConnection({
-//   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-// });
-// let dataChannel = peerConnection.createDataChannel("chat");
+// // シンプルなチャットのみ
+// const serverUrl = "ws://localhost:8080";
+// const ws = new WebSocket(serverUrl);
 
-// document.getElementById("sendButton")!.addEventListener("click", () => {
+// ws.onopen = () => {
+//   console.log("Connected to the server");
+// };
+
+// ws.onerror = (error) => {
+//   console.error(`WebSocket error: ${error}`);
+// };
+
+// ws.onmessage = (event) => {
+//   console.log(`Message from server: ${event.data}`);
+//   showMessage(event.data);
+// };
+
+// function sendMessage(message: string) {
+//   ws.send(message);
+// }
+
+// function showMessage(message: string) {
+//   const chatDiv = document.getElementById("chat");
+//   if (chatDiv) {
+//     const messageElement = document.createElement("p");
+//     messageElement.textContent = message;
+//     chatDiv.appendChild(messageElement);
+//   }
+// }
+
+// document.getElementById("sendButton")?.addEventListener("click", () => {
 //   const messageInput = document.getElementById(
 //     "messageInput"
 //   ) as HTMLInputElement;
 //   const message = messageInput.value;
-//   dataChannel.send(message);
-//   displayMessage(message, true);
-//   messageInput.value = "";
+//   if (message) {
+//     sendMessage(message);
+//     messageInput.value = "";
+//   }
 // });
 
-// // データチャネルのセットアップ
-// dataChannel.onopen = () => console.log("Data channel is open");
-// dataChannel.onmessage = (event) => displayMessage(event.data, false);
+// 特定ピア間でのチャット(動かない)
+const serverUrl = "ws://localhost:8080";
+const ws = new WebSocket(serverUrl);
 
-// // シグナリングサーバーからのメッセージを処理
-// signalingServer.onmessage = async (event) => {
-//   const message = JSON.parse(event.data);
+const peerConnection = new RTCPeerConnection({
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun2.l.google.com:19302" },
+  ],
+});
 
-//   if (message.offer) {
-//     // オファーを受信したら、アンサーを作成するためのボタンを有効にする
-//     document.getElementById("createAnswerButton")!.addEventListener(
-//       "click",
-//       async () => {
-//         await peerConnection.setRemoteDescription(
-//           new RTCSessionDescription(message.offer)
-//         );
-//         const answer = await peerConnection.createAnswer();
-//         await peerConnection.setLocalDescription(answer);
-//         signalingServer.send(JSON.stringify({ answer }));
-//       },
-//       { once: true }
-//     ); // イベントリスナーを一度だけ実行
-//   } else if (message.answer) {
-//     await peerConnection.setRemoteDescription(
-//       new RTCSessionDescription(message.answer)
-//     );
-//   } else if (message.iceCandidate) {
-//     try {
-//       await peerConnection.addIceCandidate(message.iceCandidate);
-//     } catch (e) {
-//       console.error("Error adding received ice candidate", e);
-//     }
-//   }
-// };
+peerConnection.ondatachannel = (event) => {
+  dataChannel = event.channel;
+  dataChannel.onopen = () => console.log("Data channel is open");
+  dataChannel.onmessage = (event) => showMessage(event.data);
+};
 
-// // ICE候補の処理
-// peerConnection.onicecandidate = (event) => {
-//   if (event.candidate) {
-//     signalingServer.send(JSON.stringify({ iceCandidate: event.candidate }));
-//   }
-// };
+let dataChannel = peerConnection.createDataChannel("chat");
 
-// // メッセージを表示する関数
-// function displayMessage(message: string, isOwnMessage: boolean) {
-//   const chatDiv = document.getElementById("chat")!;
-//   const messageDiv = document.createElement("div");
-//   messageDiv.textContent = message;
-//   if (isOwnMessage) {
-//     messageDiv.style.textAlign = "right";
-//   }
-//   chatDiv.appendChild(messageDiv);
-// }
+peerConnection.onicecandidate = (event) => {
+  if (event.candidate) {
+    ws.send(JSON.stringify({ iceCandidate: event.candidate }));
+  }
+};
 
-// // オファーを作成し、シグナリングサーバーに送信する
-// document
-//   .getElementById("createOfferButton")!
-//   .addEventListener("click", async () => {
-//     const offer = await peerConnection.createOffer();
-//     await peerConnection.setLocalDescription(offer);
-//     signalingServer.send(JSON.stringify({ offer }));
-//   });
+dataChannel.onopen = () => console.log("Data channel is open");
+dataChannel.onmessage = (event) => showMessage(event.data);
+
+ws.onmessage = async (event) => {
+  // Blobオブジェクトをテキストに変換するための関数
+  const readBlobAsText = (blob: Blob) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        resolve(reader.result);
+      };
+      reader.onerror = (error) => {
+        reject(error);
+      };
+      reader.readAsText(blob);
+    });
+  };
+
+  // 受信したデータがBlobオブジェクトの場合、テキストに変換
+  const data =
+    event.data instanceof Blob ? await readBlobAsText(event.data) : event.data;
+  const message = JSON.parse(data);
+
+  if (message.iceCandidate) {
+    try {
+      await peerConnection.addIceCandidate(
+        new RTCIceCandidate(message.iceCandidate)
+      );
+    } catch (e) {
+      console.error("Error adding received ice candidate", e);
+    }
+  } else if (message.offer) {
+    const createAnswerButton = document.getElementById(
+      "createAnswerButton"
+    ) as HTMLButtonElement;
+    createAnswerButton.disabled = false;
+    await peerConnection.setRemoteDescription(
+      new RTCSessionDescription(message.offer)
+    );
+  } else if (message.answer) {
+    await peerConnection.setRemoteDescription(
+      new RTCSessionDescription(message.answer)
+    );
+  }
+};
+
+document
+  .getElementById("createOfferButton")!
+  .addEventListener("click", async () => {
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    ws.send(JSON.stringify({ offer }));
+  });
+
+const createAnswerButton = document.getElementById(
+  "createAnswerButton"
+) as HTMLButtonElement;
+createAnswerButton.addEventListener("click", async () => {
+  const answer = await peerConnection.createAnswer();
+  await peerConnection.setLocalDescription(answer);
+  ws.send(JSON.stringify({ answer }));
+  createAnswerButton.disabled = true;
+});
+
+function showMessage(message: string) {
+  const chatDiv = document.getElementById("chat");
+  if (chatDiv) {
+    const messageElement = document.createElement("p");
+    messageElement.textContent = message;
+    chatDiv.appendChild(messageElement);
+  }
+}
+
+document.getElementById("sendButton")!.addEventListener("click", () => {
+  const messageInput = document.getElementById(
+    "messageInput"
+  ) as HTMLInputElement;
+  const message = messageInput.value;
+  if (message) {
+    dataChannel.send(message);
+    messageInput.value = "";
+  }
+});
