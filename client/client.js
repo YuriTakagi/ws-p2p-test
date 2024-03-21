@@ -1,6 +1,3 @@
-// // シンプルなチャットのみ
-// const serverUrl = "ws://localhost:8080";
-// const ws = new WebSocket(serverUrl);
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -38,38 +35,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 var _this = this;
-// ws.onopen = () => {
-//   console.log("Connected to the server");
-// };
-// ws.onerror = (error) => {
-//   console.error(`WebSocket error: ${error}`);
-// };
-// ws.onmessage = (event) => {
-//   console.log(`Message from server: ${event.data}`);
-//   showMessage(event.data);
-// };
-// function sendMessage(message: string) {
-//   ws.send(message);
-// }
-// function showMessage(message: string) {
-//   const chatDiv = document.getElementById("chat");
-//   if (chatDiv) {
-//     const messageElement = document.createElement("p");
-//     messageElement.textContent = message;
-//     chatDiv.appendChild(messageElement);
-//   }
-// }
-// document.getElementById("sendButton")?.addEventListener("click", () => {
-//   const messageInput = document.getElementById(
-//     "messageInput"
-//   ) as HTMLInputElement;
-//   const message = messageInput.value;
-//   if (message) {
-//     sendMessage(message);
-//     messageInput.value = "";
-//   }
-// });
-// 特定ピア間でのチャット(動かない)
 var serverUrl = "ws://localhost:8080";
 var ws = new WebSocket(serverUrl);
 var peerConnection = new RTCPeerConnection({
@@ -120,37 +85,42 @@ ws.onmessage = function (event) { return __awaiter(_this, void 0, void 0, functi
             case 3:
                 data = _a;
                 message = JSON.parse(data);
-                if (!message.iceCandidate) return [3 /*break*/, 8];
-                _b.label = 4;
+                if (!(message.action === "roomCreated" || message.action === "joinedRoom")) return [3 /*break*/, 4];
+                console.log(message);
+                return [3 /*break*/, 13];
             case 4:
-                _b.trys.push([4, 6, , 7]);
-                return [4 /*yield*/, peerConnection.addIceCandidate(new RTCIceCandidate(message.iceCandidate))];
+                if (!message.iceCandidate) return [3 /*break*/, 9];
+                _b.label = 5;
             case 5:
-                _b.sent();
-                return [3 /*break*/, 7];
+                _b.trys.push([5, 7, , 8]);
+                return [4 /*yield*/, peerConnection.addIceCandidate(new RTCIceCandidate(message.iceCandidate))];
             case 6:
+                _b.sent();
+                return [3 /*break*/, 8];
+            case 7:
                 e_1 = _b.sent();
                 console.error("Error adding received ice candidate", e_1);
-                return [3 /*break*/, 7];
-            case 7: return [3 /*break*/, 12];
-            case 8:
-                if (!message.offer) return [3 /*break*/, 10];
+                return [3 /*break*/, 8];
+            case 8: return [3 /*break*/, 13];
+            case 9:
+                if (!message.offer) return [3 /*break*/, 11];
                 createAnswerButton_1 = document.getElementById("createAnswerButton");
                 createAnswerButton_1.disabled = false;
                 return [4 /*yield*/, peerConnection.setRemoteDescription(new RTCSessionDescription(message.offer))];
-            case 9:
-                _b.sent();
-                return [3 /*break*/, 12];
             case 10:
-                if (!message.answer) return [3 /*break*/, 12];
-                return [4 /*yield*/, peerConnection.setRemoteDescription(new RTCSessionDescription(message.answer))];
-            case 11:
                 _b.sent();
-                _b.label = 12;
-            case 12: return [2 /*return*/];
+                return [3 /*break*/, 13];
+            case 11:
+                if (!message.answer) return [3 /*break*/, 13];
+                return [4 /*yield*/, peerConnection.setRemoteDescription(new RTCSessionDescription(message.answer))];
+            case 12:
+                _b.sent();
+                _b.label = 13;
+            case 13: return [2 /*return*/];
         }
     });
 }); };
+// オファー
 document
     .getElementById("createOfferButton")
     .addEventListener("click", function () { return __awaiter(_this, void 0, void 0, function () {
@@ -168,6 +138,7 @@ document
         }
     });
 }); });
+// アンサー
 var createAnswerButton = document.getElementById("createAnswerButton");
 createAnswerButton.addEventListener("click", function () { return __awaiter(_this, void 0, void 0, function () {
     var answer;
@@ -193,6 +164,19 @@ function showMessage(message) {
         chatDiv.appendChild(messageElement);
     }
 }
+// ルーム作成
+document.getElementById("createRoomButton").addEventListener("click", function () {
+    var roomName = document.getElementById("roomNameInput").value;
+    var roomPassword = document.getElementById("roomPasswordInput").value;
+    ws.send(JSON.stringify({ action: "createRoom", roomName: roomName, roomPassword: roomPassword }));
+});
+// ルーム参加
+document.getElementById("joinRoomButton").addEventListener("click", function () {
+    var roomName = document.getElementById("roomNameInput").value;
+    var roomPassword = document.getElementById("roomPasswordInput").value;
+    ws.send(JSON.stringify({ action: "joinRoom", roomName: roomName, roomPassword: roomPassword }));
+});
+// メッセージ送信
 document.getElementById("sendButton").addEventListener("click", function () {
     var messageInput = document.getElementById("messageInput");
     var message = messageInput.value;

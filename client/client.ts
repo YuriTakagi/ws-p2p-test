@@ -1,45 +1,3 @@
-// // シンプルなチャットのみ
-// const serverUrl = "ws://localhost:8080";
-// const ws = new WebSocket(serverUrl);
-
-// ws.onopen = () => {
-//   console.log("Connected to the server");
-// };
-
-// ws.onerror = (error) => {
-//   console.error(`WebSocket error: ${error}`);
-// };
-
-// ws.onmessage = (event) => {
-//   console.log(`Message from server: ${event.data}`);
-//   showMessage(event.data);
-// };
-
-// function sendMessage(message: string) {
-//   ws.send(message);
-// }
-
-// function showMessage(message: string) {
-//   const chatDiv = document.getElementById("chat");
-//   if (chatDiv) {
-//     const messageElement = document.createElement("p");
-//     messageElement.textContent = message;
-//     chatDiv.appendChild(messageElement);
-//   }
-// }
-
-// document.getElementById("sendButton")?.addEventListener("click", () => {
-//   const messageInput = document.getElementById(
-//     "messageInput"
-//   ) as HTMLInputElement;
-//   const message = messageInput.value;
-//   if (message) {
-//     sendMessage(message);
-//     messageInput.value = "";
-//   }
-// });
-
-// 特定ピア間でのチャット(動かない)
 const serverUrl = "ws://localhost:8080";
 const ws = new WebSocket(serverUrl);
 
@@ -69,7 +27,6 @@ dataChannel.onopen = () => console.log("Data channel is open");
 dataChannel.onmessage = (event) => showMessage(event.data);
 
 ws.onmessage = async (event) => {
-  // Blobオブジェクトをテキストに変換するための関数
   const readBlobAsText = (blob: Blob) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -83,12 +40,13 @@ ws.onmessage = async (event) => {
     });
   };
 
-  // 受信したデータがBlobオブジェクトの場合、テキストに変換
   const data =
     event.data instanceof Blob ? await readBlobAsText(event.data) : event.data;
   const message = JSON.parse(data);
 
-  if (message.iceCandidate) {
+  if (message.action === "roomCreated" || message.action === "joinedRoom") {
+    console.log(message);
+  } else if (message.iceCandidate) {
     try {
       await peerConnection.addIceCandidate(
         new RTCIceCandidate(message.iceCandidate)
@@ -111,6 +69,7 @@ ws.onmessage = async (event) => {
   }
 };
 
+// オファー
 document
   .getElementById("createOfferButton")!
   .addEventListener("click", async () => {
@@ -119,6 +78,7 @@ document
     ws.send(JSON.stringify({ offer }));
   });
 
+// アンサー
 const createAnswerButton = document.getElementById(
   "createAnswerButton"
 ) as HTMLButtonElement;
@@ -138,6 +98,29 @@ function showMessage(message: string) {
   }
 }
 
+// ルーム作成
+document.getElementById("createRoomButton")!.addEventListener("click", () => {
+  const roomName = (
+    document.getElementById("roomNameInput") as HTMLInputElement
+  ).value;
+  const roomPassword = (
+    document.getElementById("roomPasswordInput") as HTMLInputElement
+  ).value;
+  ws.send(JSON.stringify({ action: "createRoom", roomName, roomPassword }));
+});
+
+// ルーム参加
+document.getElementById("joinRoomButton")!.addEventListener("click", () => {
+  const roomName = (
+    document.getElementById("roomNameInput") as HTMLInputElement
+  ).value;
+  const roomPassword = (
+    document.getElementById("roomPasswordInput") as HTMLInputElement
+  ).value;
+  ws.send(JSON.stringify({ action: "joinRoom", roomName, roomPassword }));
+});
+
+// メッセージ送信
 document.getElementById("sendButton")!.addEventListener("click", () => {
   const messageInput = document.getElementById(
     "messageInput"
