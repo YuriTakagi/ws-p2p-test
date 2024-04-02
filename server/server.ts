@@ -61,6 +61,7 @@ wss.on("connection", (ws) => {
           room.password === parsedMessage.roomPassword
       );
       if (room) {
+        console.log(parsedMessage);
         room.clients.add(ws);
         ws.send(JSON.stringify({ action: "joinedRoom", roomName: room.name }));
       } else {

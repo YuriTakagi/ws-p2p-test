@@ -10,7 +10,7 @@ const peerConnection = new RTCPeerConnection({
 });
 
 peerConnection.ondatachannel = (event) => {
-  dataChannel = event.channel;
+  let dataChannel = event.channel;
   dataChannel.onopen = () => console.log("Data channel is open");
   dataChannel.onmessage = (event) => showMessage(event.data);
 };
@@ -27,15 +27,11 @@ dataChannel.onopen = () => console.log("Data channel is open");
 dataChannel.onmessage = (event) => showMessage(event.data);
 
 ws.onmessage = async (event) => {
-  const readBlobAsText = (blob: Blob) => {
+  const readBlobAsText = (blob: Blob): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => {
-        resolve(reader.result);
-      };
-      reader.onerror = (error) => {
-        reject(error);
-      };
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
       reader.readAsText(blob);
     });
   };
@@ -69,16 +65,13 @@ ws.onmessage = async (event) => {
   }
 };
 
-// オファー
-document
-  .getElementById("createOfferButton")!
-  .addEventListener("click", async () => {
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    ws.send(JSON.stringify({ offer }));
-  });
+const createOfferButton = document.getElementById("createOfferButton");
+createOfferButton?.addEventListener("click", async () => {
+  const offer = await peerConnection.createOffer();
+  await peerConnection.setLocalDescription(offer);
+  ws.send(JSON.stringify({ offer }));
+});
 
-// アンサー
 const createAnswerButton = document.getElementById(
   "createAnswerButton"
 ) as HTMLButtonElement;
@@ -89,44 +82,70 @@ createAnswerButton.addEventListener("click", async () => {
   createAnswerButton.disabled = true;
 });
 
-function showMessage(message: string) {
+const showMessage = (message: string) => {
   const chatDiv = document.getElementById("chat");
   if (chatDiv) {
     const messageElement = document.createElement("p");
     messageElement.textContent = message;
     chatDiv.appendChild(messageElement);
   }
-}
+};
 
-// ルーム作成
-document.getElementById("createRoomButton")!.addEventListener("click", () => {
-  const roomName = (
-    document.getElementById("roomNameInput") as HTMLInputElement
-  ).value;
-  const roomPassword = (
-    document.getElementById("roomPasswordInput") as HTMLInputElement
-  ).value;
-  ws.send(JSON.stringify({ action: "createRoom", roomName, roomPassword }));
+const createRoomButton = document.getElementById("createRoomButton");
+createRoomButton?.addEventListener("click", () => {
+  const roomNameInput = document.getElementById(
+    "roomNameInput"
+  ) as HTMLInputElement;
+  const roomPasswordInput = document.getElementById(
+    "roomPasswordInput"
+  ) as HTMLInputElement;
+  ws.send(
+    JSON.stringify({
+      action: "createRoom",
+      roomName: roomNameInput.value,
+      roomPassword: roomPasswordInput.value,
+    })
+  );
 });
 
-// ルーム参加
-document.getElementById("joinRoomButton")!.addEventListener("click", () => {
-  const roomName = (
-    document.getElementById("roomNameInput") as HTMLInputElement
-  ).value;
-  const roomPassword = (
-    document.getElementById("roomPasswordInput") as HTMLInputElement
-  ).value;
-  ws.send(JSON.stringify({ action: "joinRoom", roomName, roomPassword }));
+const joinRoomButton = document.getElementById("joinRoomButton");
+joinRoomButton?.addEventListener("click", () => {
+  const roomNameInput = document.getElementById(
+    "roomNameInput"
+  ) as HTMLInputElement;
+  const roomPasswordInput = document.getElementById(
+    "roomPasswordInput"
+  ) as HTMLInputElement;
+  ws.send(
+    JSON.stringify({
+      action: "joinRoom",
+      roomName: roomNameInput.value,
+      roomPassword: roomPasswordInput.value,
+    })
+  );
 });
 
-// メッセージ送信
-document.getElementById("sendButton")!.addEventListener("click", () => {
+// const sendButton = document.getElementById("sendButton");
+// sendButton?.addEventListener("click", () => {
+//   const messageInput = document.getElementById(
+//     "messageInput"
+//   ) as HTMLInputElement;
+//   const message = messageInput.value;
+//   if (message) {
+//     ws.send(
+//       JSON.stringify({ action: "sendMessage", message, sender: "ClientName" })
+//     );
+//     messageInput.value = "";
+//   }
+// });
+
+const sendButton = document.getElementById("sendButton");
+sendButton?.addEventListener("click", () => {
   const messageInput = document.getElementById(
     "messageInput"
   ) as HTMLInputElement;
   const message = messageInput.value;
-  if (message) {
+  if (message && dataChannel.readyState === "open") {
     dataChannel.send(message);
     messageInput.value = "";
   }

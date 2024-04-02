@@ -45,7 +45,7 @@ var peerConnection = new RTCPeerConnection({
     ],
 });
 peerConnection.ondatachannel = function (event) {
-    dataChannel = event.channel;
+    var dataChannel = event.channel;
     dataChannel.onopen = function () { return console.log("Data channel is open"); };
     dataChannel.onmessage = function (event) { return showMessage(event.data); };
 };
@@ -65,12 +65,8 @@ ws.onmessage = function (event) { return __awaiter(_this, void 0, void 0, functi
                 readBlobAsText = function (blob) {
                     return new Promise(function (resolve, reject) {
                         var reader = new FileReader();
-                        reader.onload = function () {
-                            resolve(reader.result);
-                        };
-                        reader.onerror = function (error) {
-                            reject(error);
-                        };
+                        reader.onload = function () { return resolve(reader.result); };
+                        reader.onerror = function (error) { return reject(error); };
                         reader.readAsText(blob);
                     });
                 };
@@ -120,10 +116,8 @@ ws.onmessage = function (event) { return __awaiter(_this, void 0, void 0, functi
         }
     });
 }); };
-// オファー
-document
-    .getElementById("createOfferButton")
-    .addEventListener("click", function () { return __awaiter(_this, void 0, void 0, function () {
+var createOfferButton = document.getElementById("createOfferButton");
+createOfferButton === null || createOfferButton === void 0 ? void 0 : createOfferButton.addEventListener("click", function () { return __awaiter(_this, void 0, void 0, function () {
     var offer;
     return __generator(this, function (_a) {
         switch (_a.label) {
@@ -138,7 +132,6 @@ document
         }
     });
 }); });
-// アンサー
 var createAnswerButton = document.getElementById("createAnswerButton");
 createAnswerButton.addEventListener("click", function () { return __awaiter(_this, void 0, void 0, function () {
     var answer;
@@ -156,31 +149,52 @@ createAnswerButton.addEventListener("click", function () { return __awaiter(_thi
         }
     });
 }); });
-function showMessage(message) {
+var showMessage = function (message) {
     var chatDiv = document.getElementById("chat");
     if (chatDiv) {
         var messageElement = document.createElement("p");
         messageElement.textContent = message;
         chatDiv.appendChild(messageElement);
     }
-}
-// ルーム作成
-document.getElementById("createRoomButton").addEventListener("click", function () {
-    var roomName = document.getElementById("roomNameInput").value;
-    var roomPassword = document.getElementById("roomPasswordInput").value;
-    ws.send(JSON.stringify({ action: "createRoom", roomName: roomName, roomPassword: roomPassword }));
+};
+var createRoomButton = document.getElementById("createRoomButton");
+createRoomButton === null || createRoomButton === void 0 ? void 0 : createRoomButton.addEventListener("click", function () {
+    var roomNameInput = document.getElementById("roomNameInput");
+    var roomPasswordInput = document.getElementById("roomPasswordInput");
+    ws.send(JSON.stringify({
+        action: "createRoom",
+        roomName: roomNameInput.value,
+        roomPassword: roomPasswordInput.value,
+    }));
 });
-// ルーム参加
-document.getElementById("joinRoomButton").addEventListener("click", function () {
-    var roomName = document.getElementById("roomNameInput").value;
-    var roomPassword = document.getElementById("roomPasswordInput").value;
-    ws.send(JSON.stringify({ action: "joinRoom", roomName: roomName, roomPassword: roomPassword }));
+var joinRoomButton = document.getElementById("joinRoomButton");
+joinRoomButton === null || joinRoomButton === void 0 ? void 0 : joinRoomButton.addEventListener("click", function () {
+    var roomNameInput = document.getElementById("roomNameInput");
+    var roomPasswordInput = document.getElementById("roomPasswordInput");
+    ws.send(JSON.stringify({
+        action: "joinRoom",
+        roomName: roomNameInput.value,
+        roomPassword: roomPasswordInput.value,
+    }));
 });
-// メッセージ送信
-document.getElementById("sendButton").addEventListener("click", function () {
+// const sendButton = document.getElementById("sendButton");
+// sendButton?.addEventListener("click", () => {
+//   const messageInput = document.getElementById(
+//     "messageInput"
+//   ) as HTMLInputElement;
+//   const message = messageInput.value;
+//   if (message) {
+//     ws.send(
+//       JSON.stringify({ action: "sendMessage", message, sender: "ClientName" })
+//     );
+//     messageInput.value = "";
+//   }
+// });
+var sendButton = document.getElementById("sendButton");
+sendButton === null || sendButton === void 0 ? void 0 : sendButton.addEventListener("click", function () {
     var messageInput = document.getElementById("messageInput");
     var message = messageInput.value;
-    if (message) {
+    if (message && dataChannel.readyState === "open") {
         dataChannel.send(message);
         messageInput.value = "";
     }
