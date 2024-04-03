@@ -177,19 +177,6 @@ joinRoomButton === null || joinRoomButton === void 0 ? void 0 : joinRoomButton.a
         roomPassword: roomPasswordInput.value,
     }));
 });
-// const sendButton = document.getElementById("sendButton");
-// sendButton?.addEventListener("click", () => {
-//   const messageInput = document.getElementById(
-//     "messageInput"
-//   ) as HTMLInputElement;
-//   const message = messageInput.value;
-//   if (message) {
-//     ws.send(
-//       JSON.stringify({ action: "sendMessage", message, sender: "ClientName" })
-//     );
-//     messageInput.value = "";
-//   }
-// });
 var sendButton = document.getElementById("sendButton");
 sendButton === null || sendButton === void 0 ? void 0 : sendButton.addEventListener("click", function () {
     var messageInput = document.getElementById("messageInput");

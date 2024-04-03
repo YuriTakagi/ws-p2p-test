@@ -125,20 +125,6 @@ joinRoomButton?.addEventListener("click", () => {
   );
 });
 
-// const sendButton = document.getElementById("sendButton");
-// sendButton?.addEventListener("click", () => {
-//   const messageInput = document.getElementById(
-//     "messageInput"
-//   ) as HTMLInputElement;
-//   const message = messageInput.value;
-//   if (message) {
-//     ws.send(
-//       JSON.stringify({ action: "sendMessage", message, sender: "ClientName" })
-//     );
-//     messageInput.value = "";
-//   }
-// });
-
 const sendButton = document.getElementById("sendButton");
 sendButton?.addEventListener("click", () => {
   const messageInput = document.getElementById(

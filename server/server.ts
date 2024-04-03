@@ -39,7 +39,6 @@ const serveFile = (
 ) => {
   const fullPath = path.join(__dirname, filePath);
   const readStream = fs.createReadStream(fullPath);
-
   response.writeHead(200, { "Content-Type": contentType });
   readStream.pipe(response);
 };
