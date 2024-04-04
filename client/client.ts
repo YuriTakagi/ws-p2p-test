@@ -1,5 +1,6 @@
 const serverUrl = "ws://localhost:8080";
 const ws = new WebSocket(serverUrl);
+let currentRoomName = "";
 
 const peerConnection = new RTCPeerConnection({
   iceServers: [
@@ -19,7 +20,13 @@ let dataChannel = peerConnection.createDataChannel("chat");
 
 peerConnection.onicecandidate = (event) => {
   if (event.candidate) {
-    ws.send(JSON.stringify({ iceCandidate: event.candidate }));
+    ws.send(
+      JSON.stringify({
+        action: "iceCandidate",
+        iceCandidate: event.candidate,
+        roomName: currentRoomName,
+      })
+    );
   }
 };
 
@@ -42,6 +49,7 @@ ws.onmessage = async (event) => {
 
   if (message.action === "roomCreated" || message.action === "joinedRoom") {
     console.log(message);
+    currentRoomName = message.roomName;
   } else if (message.iceCandidate) {
     try {
       await peerConnection.addIceCandidate(
@@ -69,7 +77,9 @@ const createOfferButton = document.getElementById("createOfferButton");
 createOfferButton?.addEventListener("click", async () => {
   const offer = await peerConnection.createOffer();
   await peerConnection.setLocalDescription(offer);
-  ws.send(JSON.stringify({ offer }));
+  ws.send(
+    JSON.stringify({ action: "offer", offer: offer, roomName: currentRoomName })
+  );
 });
 
 const createAnswerButton = document.getElementById(
@@ -78,7 +88,13 @@ const createAnswerButton = document.getElementById(
 createAnswerButton.addEventListener("click", async () => {
   const answer = await peerConnection.createAnswer();
   await peerConnection.setLocalDescription(answer);
-  ws.send(JSON.stringify({ answer }));
+  ws.send(
+    JSON.stringify({
+      action: "answer",
+      answer: answer,
+      roomName: currentRoomName,
+    })
+  );
   createAnswerButton.disabled = true;
 });
 
@@ -99,6 +115,7 @@ createRoomButton?.addEventListener("click", () => {
   const roomPasswordInput = document.getElementById(
     "roomPasswordInput"
   ) as HTMLInputElement;
+  currentRoomName = roomNameInput.value;
   ws.send(
     JSON.stringify({
       action: "createRoom",
@@ -116,6 +133,7 @@ joinRoomButton?.addEventListener("click", () => {
   const roomPasswordInput = document.getElementById(
     "roomPasswordInput"
   ) as HTMLInputElement;
+  currentRoomName = roomNameInput.value;
   ws.send(
     JSON.stringify({
       action: "joinRoom",

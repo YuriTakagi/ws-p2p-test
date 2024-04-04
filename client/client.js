@@ -37,6 +37,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 var _this = this;
 var serverUrl = "ws://localhost:8080";
 var ws = new WebSocket(serverUrl);
+var currentRoomName = "";
 var peerConnection = new RTCPeerConnection({
     iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
@@ -52,7 +53,12 @@ peerConnection.ondatachannel = function (event) {
 var dataChannel = peerConnection.createDataChannel("chat");
 peerConnection.onicecandidate = function (event) {
     if (event.candidate) {
-        ws.send(JSON.stringify({ iceCandidate: event.candidate }));
+        // ws.send(JSON.stringify({ iceCandidate: event.candidate }));
+        ws.send(JSON.stringify({
+            action: "iceCandidate",
+            iceCandidate: event.candidate,
+            roomName: currentRoomName,
+        }));
     }
 };
 dataChannel.onopen = function () { return console.log("Data channel is open"); };
@@ -83,6 +89,7 @@ ws.onmessage = function (event) { return __awaiter(_this, void 0, void 0, functi
                 message = JSON.parse(data);
                 if (!(message.action === "roomCreated" || message.action === "joinedRoom")) return [3 /*break*/, 4];
                 console.log(message);
+                currentRoomName = message.roomName;
                 return [3 /*break*/, 13];
             case 4:
                 if (!message.iceCandidate) return [3 /*break*/, 9];
@@ -127,7 +134,7 @@ createOfferButton === null || createOfferButton === void 0 ? void 0 : createOffe
                 return [4 /*yield*/, peerConnection.setLocalDescription(offer)];
             case 2:
                 _a.sent();
-                ws.send(JSON.stringify({ offer: offer }));
+                ws.send(JSON.stringify({ action: "offer", offer: offer, roomName: currentRoomName }));
                 return [2 /*return*/];
         }
     });
@@ -143,7 +150,11 @@ createAnswerButton.addEventListener("click", function () { return __awaiter(_thi
                 return [4 /*yield*/, peerConnection.setLocalDescription(answer)];
             case 2:
                 _a.sent();
-                ws.send(JSON.stringify({ answer: answer }));
+                ws.send(JSON.stringify({
+                    action: "answer",
+                    answer: answer,
+                    roomName: currentRoomName,
+                }));
                 createAnswerButton.disabled = true;
                 return [2 /*return*/];
         }
@@ -161,6 +172,7 @@ var createRoomButton = document.getElementById("createRoomButton");
 createRoomButton === null || createRoomButton === void 0 ? void 0 : createRoomButton.addEventListener("click", function () {
     var roomNameInput = document.getElementById("roomNameInput");
     var roomPasswordInput = document.getElementById("roomPasswordInput");
+    currentRoomName = roomNameInput.value;
     ws.send(JSON.stringify({
         action: "createRoom",
         roomName: roomNameInput.value,
@@ -171,6 +183,7 @@ var joinRoomButton = document.getElementById("joinRoomButton");
 joinRoomButton === null || joinRoomButton === void 0 ? void 0 : joinRoomButton.addEventListener("click", function () {
     var roomNameInput = document.getElementById("roomNameInput");
     var roomPasswordInput = document.getElementById("roomPasswordInput");
+    currentRoomName = roomNameInput.value;
     ws.send(JSON.stringify({
         action: "joinRoom",
         roomName: roomNameInput.value,
