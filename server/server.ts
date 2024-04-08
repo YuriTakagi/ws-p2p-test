@@ -14,7 +14,7 @@ type Client = {
 type Room = {
   name: string;
   password: string;
-  clients: Set<WebSocket>;
+  clients: Map<string, WebSocket>;
 };
 
 let rooms: Room[] = [];
@@ -94,7 +94,7 @@ const createRoom = (
   const newRoom: Room = {
     name: roomName,
     password: roomPassword,
-    clients: new Set([client.ws]),
+    clients: new Map([[client.id, client.ws]]),
   };
   rooms.push(newRoom);
   client.ws.send(
@@ -111,7 +111,26 @@ const joinRoom = (
   );
   if (room) {
     console.log(`Client: ${client.id}, joined room: ${roomName}`);
-    room.clients.add(client.ws);
+    room.clients.set(client.id, client.ws);
+    // 新しいクライアントに既存のクライアントのリストを送信
+    const existingClients = Array.from(room.clients.keys());
+    client.ws.send(
+      JSON.stringify({
+        action: "joinedRoom",
+        clients: existingClients,
+        roomName,
+      })
+    );
+
+    // 既存のクライアントに新しいクライアントの参加を通知
+    room.clients.forEach((ws, id) => {
+      if (id !== client.id) {
+        // 新しいクライアント自身を除外
+        ws.send(
+          JSON.stringify({ action: "newClientJoined", clientId: client.id })
+        );
+      }
+    });
   } else {
     client.ws.send(
       JSON.stringify({
@@ -124,67 +143,72 @@ const joinRoom = (
 
 const handleOffer = (
   client: Client,
-  parsedMessage: { offer: RTCSessionDescriptionInit; roomName: string }
+  {
+    offer,
+    roomName,
+    targetId,
+  }: { offer: RTCSessionDescriptionInit; roomName: string; targetId: string }
 ) => {
-  const { offer, roomName } = parsedMessage;
   const room = rooms.find((room) => room.name === roomName);
-  if (room) {
-    console.log(`Client: ${client.id} sent offer in room: ${roomName}`);
-    room.clients.forEach((clientInRoom) => {
-      if (
-        clientInRoom !== client.ws &&
-        clientInRoom.readyState === WebSocket.OPEN
-      ) {
-        clientInRoom.send(JSON.stringify({ action: "offer", offer }));
-      }
-    });
+  if (room && room.clients.has(targetId)) {
+    console.log(
+      `Client: ${client.id} sent offer to ${targetId} in room: ${roomName}`
+    );
+    const targetWs = room.clients.get(targetId);
+    targetWs?.send(
+      JSON.stringify({ action: "offer", offer, fromId: client.id })
+    );
   }
 };
 
 const handleAnswer = (
   client: Client,
-  parsedMessage: { answer: RTCSessionDescriptionInit; roomName: string }
+  {
+    answer,
+    roomName,
+    targetId,
+  }: { answer: RTCSessionDescriptionInit; roomName: string; targetId: string }
 ) => {
-  const { answer, roomName } = parsedMessage;
   const room = rooms.find((room) => room.name === roomName);
-  if (room) {
-    console.log(`Client: ${client.id} sent answer in room: ${roomName}`);
-    room.clients.forEach((clientInRoom) => {
-      if (
-        clientInRoom !== client.ws &&
-        clientInRoom.readyState === WebSocket.OPEN
-      ) {
-        clientInRoom.send(JSON.stringify({ action: "answer", answer }));
-      }
-    });
+  if (room && room.clients.has(targetId)) {
+    console.log(
+      `Client: ${client.id} sent answer to ${targetId} in room: ${roomName}`
+    );
+    const targetWs = room.clients.get(targetId);
+    targetWs?.send(
+      JSON.stringify({ action: "answer", answer, fromId: client.id })
+    );
   }
 };
 
 const handleIceCandidate = (
   client: Client,
-  parsedMessage: { iceCandidate: RTCIceCandidate; roomName: string }
+  {
+    iceCandidate,
+    roomName,
+    targetId,
+  }: { iceCandidate: RTCIceCandidate; roomName: string; targetId?: string }
 ) => {
-  const { iceCandidate, roomName } = parsedMessage;
   const room = rooms.find((room) => room.name === roomName);
-  if (room) {
-    console.log(`Client: ${client.id} sent ICE candidate in room: ${roomName}`);
-    room.clients.forEach((clientInRoom) => {
-      if (
-        clientInRoom !== client.ws &&
-        clientInRoom.readyState === WebSocket.OPEN
-      ) {
-        clientInRoom.send(
-          JSON.stringify({ action: "iceCandidate", iceCandidate })
-        );
-      }
-    });
+  if (room && targetId && room.clients.has(targetId)) {
+    console.log(
+      `Client: ${client.id} sent ICE candidate to ${targetId} in room: ${roomName}`
+    );
+    const targetWs = room.clients.get(targetId);
+    targetWs?.send(
+      JSON.stringify({
+        action: "iceCandidate",
+        iceCandidate,
+        fromId: client.id,
+      })
+    );
   }
 };
 
 const handleDisconnect = (client: Client) => {
   console.log(`Client: ${client.id} disconnected`);
   rooms.forEach((room) => {
-    room.clients.delete(client.ws);
+    room.clients.delete(client.id);
     if (room.clients.size === 0) {
       rooms = rooms.filter((r) => r !== room);
     }

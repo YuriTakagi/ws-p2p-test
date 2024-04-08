@@ -1,3 +1,6 @@
+// const serverUrl = "ws://localhost:8080";
+// const ws = new WebSocket(serverUrl);
+// let currentRoomName = "";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -35,131 +38,278 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 var _this = this;
+// type PeerConnectionEntry = {
+//   peerConnection: RTCPeerConnection;
+//   dataChannel: RTCDataChannel;
+// };
+// const peerConnections: Record<string, PeerConnectionEntry> = {};
+// const peerConnectionConfig = {
+//   iceServers: [
+//     { urls: "stun:stun.l.google.com:19302" },
+//     { urls: "stun:stun1.l.google.com:19302" },
+//     { urls: "stun:stun2.l.google.com:19302" },
+//   ],
+// };
+// const createPeerConnection = (clientId: string) => {
+//   const peerConnection = new RTCPeerConnection(peerConnectionConfig);
+//   peerConnection.ondatachannel = (event) => {
+//     const dataChannel = event.channel;
+//     dataChannel.onopen = () => console.log("Data channel is open");
+//     dataChannel.onmessage = (event) => showMessage(event.data);
+//   };
+//   peerConnection.onicecandidate = (event) => {
+//     if (event.candidate) {
+//       ws.send(
+//         JSON.stringify({
+//           action: "iceCandidate",
+//           iceCandidate: event.candidate,
+//           roomName: currentRoomName,
+//           targetId: clientId,
+//         })
+//       );
+//     }
+//   };
+//   const dataChannel = peerConnection.createDataChannel("chat");
+//   dataChannel.onopen = () => console.log("Data channel is open");
+//   dataChannel.onmessage = (event) => showMessage(event.data);
+//   peerConnections[clientId] = { peerConnection, dataChannel };
+//   return peerConnection;
+// };
+// ws.onmessage = async (event) => {
+//   const data =
+//     typeof event.data === "string" ? event.data : await event.data.text();
+//   const message = JSON.parse(data);
+//   if (message.action === "roomCreated" || message.action === "joinedRoom") {
+//     console.log(message);
+//     currentRoomName = message.roomName;
+//   } else if (message.action === "newClientJoined") {
+//     const newClientId = message.clientId;
+//     const peerConnection = createPeerConnection(newClientId);
+//     const offer = await peerConnection.createOffer();
+//     await peerConnection.setLocalDescription(offer);
+//     ws.send(
+//       JSON.stringify({
+//         action: "offer",
+//         offer: offer,
+//         roomName: currentRoomName,
+//         targetId: newClientId,
+//       })
+//     );
+//   } else if (message.iceCandidate && message.fromId) {
+//     const peerConnection = peerConnections[message.fromId].peerConnection;
+//     try {
+//       await peerConnection.addIceCandidate(
+//         new RTCIceCandidate(message.iceCandidate)
+//       );
+//     } catch (e) {
+//       console.error("Error adding received ice candidate", e);
+//     }
+//   } else if (message.offer && message.fromId) {
+//     const peerConnection = createPeerConnection(message.fromId);
+//     await peerConnection.setRemoteDescription(
+//       new RTCSessionDescription(message.offer)
+//     );
+//     const answer = await peerConnection.createAnswer();
+//     await peerConnection.setLocalDescription(answer);
+//     ws.send(
+//       JSON.stringify({
+//         action: "answer",
+//         answer: answer,
+//         roomName: currentRoomName,
+//         targetId: message.fromId,
+//       })
+//     );
+//   } else if (message.answer && message.fromId) {
+//     const peerConnection = peerConnections[message.fromId].peerConnection;
+//     await peerConnection.setRemoteDescription(
+//       new RTCSessionDescription(message.answer)
+//     );
+//   }
+// };
+// const showMessage = (message: string) => {
+//   const chatDiv = document.getElementById("chat");
+//   if (chatDiv) {
+//     const messageElement = document.createElement("p");
+//     messageElement.textContent = message;
+//     chatDiv.appendChild(messageElement);
+//   }
+// };
+// const createRoomButton = document.getElementById("createRoomButton");
+// createRoomButton?.addEventListener("click", () => {
+//   const roomNameInput = document.getElementById(
+//     "roomNameInput"
+//   ) as HTMLInputElement;
+//   const roomPasswordInput = document.getElementById(
+//     "roomPasswordInput"
+//   ) as HTMLInputElement;
+//   currentRoomName = roomNameInput.value;
+//   ws.send(
+//     JSON.stringify({
+//       action: "createRoom",
+//       roomName: roomNameInput.value,
+//       roomPassword: roomPasswordInput.value,
+//     })
+//   );
+// });
+// const joinRoomButton = document.getElementById("joinRoomButton");
+// joinRoomButton?.addEventListener("click", () => {
+//   const roomNameInput = document.getElementById(
+//     "roomNameInput"
+//   ) as HTMLInputElement;
+//   const roomPasswordInput = document.getElementById(
+//     "roomPasswordInput"
+//   ) as HTMLInputElement;
+//   currentRoomName = roomNameInput.value;
+//   ws.send(
+//     JSON.stringify({
+//       action: "joinRoom",
+//       roomName: roomNameInput.value,
+//       roomPassword: roomPasswordInput.value,
+//     })
+//   );
+// });
+// const sendButton = document.getElementById("sendButton");
+// sendButton?.addEventListener("click", () => {
+//   const messageInput = document.getElementById(
+//     "messageInput"
+//   ) as HTMLInputElement;
+//   const message = messageInput.value;
+//   Object.values(peerConnections).forEach(({ dataChannel }) => {
+//     if (dataChannel.readyState === "open") {
+//       dataChannel.send(message);
+//     }
+//   });
+//   messageInput.value = "";
+// });
 var serverUrl = "ws://localhost:8080";
 var ws = new WebSocket(serverUrl);
 var currentRoomName = "";
-var peerConnection = new RTCPeerConnection({
+var peerConnections = {};
+var peerConnectionConfig = {
     iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
         { urls: "stun:stun1.l.google.com:19302" },
         { urls: "stun:stun2.l.google.com:19302" },
     ],
-});
-peerConnection.ondatachannel = function (event) {
-    var dataChannel = event.channel;
+};
+var createPeerConnection = function (clientId) {
+    var peerConnection = new RTCPeerConnection(peerConnectionConfig);
+    peerConnection.ondatachannel = function (event) {
+        var dataChannel = event.channel;
+        dataChannel.onopen = function () { return console.log("Data channel is open"); };
+        dataChannel.onmessage = function (event) { return showMessage(event.data); };
+    };
+    peerConnection.onicecandidate = function (event) {
+        if (event.candidate) {
+            ws.send(JSON.stringify({
+                action: "iceCandidate",
+                iceCandidate: event.candidate,
+                roomName: currentRoomName,
+                targetId: clientId,
+            }));
+        }
+    };
+    var dataChannel = peerConnection.createDataChannel("chat");
     dataChannel.onopen = function () { return console.log("Data channel is open"); };
     dataChannel.onmessage = function (event) { return showMessage(event.data); };
+    peerConnections[clientId] = { peerConnection: peerConnection, dataChannel: dataChannel };
+    return peerConnection;
 };
-var dataChannel = peerConnection.createDataChannel("chat");
-peerConnection.onicecandidate = function (event) {
-    if (event.candidate) {
-        // ws.send(JSON.stringify({ iceCandidate: event.candidate }));
-        ws.send(JSON.stringify({
-            action: "iceCandidate",
-            iceCandidate: event.candidate,
-            roomName: currentRoomName,
-        }));
-    }
-};
-dataChannel.onopen = function () { return console.log("Data channel is open"); };
-dataChannel.onmessage = function (event) { return showMessage(event.data); };
 ws.onmessage = function (event) { return __awaiter(_this, void 0, void 0, function () {
-    var readBlobAsText, data, _a, message, e_1, createAnswerButton_1;
-    return __generator(this, function (_b) {
-        switch (_b.label) {
+    var data, _a, message, _b, newClientId, peerConnectionForNewClient, offer, peerConnectionForIceCandidate, e_1, peerConnectionForOffer, answer, peerConnectionForAnswer;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
             case 0:
-                readBlobAsText = function (blob) {
-                    return new Promise(function (resolve, reject) {
-                        var reader = new FileReader();
-                        reader.onload = function () { return resolve(reader.result); };
-                        reader.onerror = function (error) { return reject(error); };
-                        reader.readAsText(blob);
-                    });
-                };
-                if (!(event.data instanceof Blob)) return [3 /*break*/, 2];
-                return [4 /*yield*/, readBlobAsText(event.data)];
-            case 1:
-                _a = _b.sent();
-                return [3 /*break*/, 3];
-            case 2:
+                if (!(typeof event.data === "string")) return [3 /*break*/, 1];
                 _a = event.data;
-                _b.label = 3;
+                return [3 /*break*/, 3];
+            case 1: return [4 /*yield*/, event.data.text()];
+            case 2:
+                _a = _c.sent();
+                _c.label = 3;
             case 3:
                 data = _a;
                 message = JSON.parse(data);
-                if (!(message.action === "roomCreated" || message.action === "joinedRoom")) return [3 /*break*/, 4];
+                _b = message.action;
+                switch (_b) {
+                    case "roomCreated": return [3 /*break*/, 4];
+                    case "joinedRoom": return [3 /*break*/, 4];
+                    case "newClientJoined": return [3 /*break*/, 5];
+                    case "iceCandidate": return [3 /*break*/, 8];
+                    case "offer": return [3 /*break*/, 13];
+                    case "answer": return [3 /*break*/, 18];
+                }
+                return [3 /*break*/, 21];
+            case 4:
                 console.log(message);
                 currentRoomName = message.roomName;
-                return [3 /*break*/, 13];
-            case 4:
-                if (!message.iceCandidate) return [3 /*break*/, 9];
-                _b.label = 5;
+                return [3 /*break*/, 22];
             case 5:
-                _b.trys.push([5, 7, , 8]);
-                return [4 /*yield*/, peerConnection.addIceCandidate(new RTCIceCandidate(message.iceCandidate))];
+                newClientId = message.clientId;
+                peerConnectionForNewClient = createPeerConnection(newClientId);
+                return [4 /*yield*/, peerConnectionForNewClient.createOffer()];
             case 6:
-                _b.sent();
-                return [3 /*break*/, 8];
+                offer = _c.sent();
+                return [4 /*yield*/, peerConnectionForNewClient.setLocalDescription(offer)];
             case 7:
-                e_1 = _b.sent();
-                console.error("Error adding received ice candidate", e_1);
-                return [3 /*break*/, 8];
-            case 8: return [3 /*break*/, 13];
+                _c.sent();
+                ws.send(JSON.stringify({
+                    action: "offer",
+                    offer: offer,
+                    roomName: currentRoomName,
+                    targetId: newClientId,
+                }));
+                return [3 /*break*/, 22];
+            case 8:
+                if (!message.fromId) return [3 /*break*/, 12];
+                peerConnectionForIceCandidate = peerConnections[message.fromId].peerConnection;
+                _c.label = 9;
             case 9:
-                if (!message.offer) return [3 /*break*/, 11];
-                createAnswerButton_1 = document.getElementById("createAnswerButton");
-                createAnswerButton_1.disabled = false;
-                return [4 /*yield*/, peerConnection.setRemoteDescription(new RTCSessionDescription(message.offer))];
+                _c.trys.push([9, 11, , 12]);
+                return [4 /*yield*/, peerConnectionForIceCandidate.addIceCandidate(new RTCIceCandidate(message.iceCandidate))];
             case 10:
-                _b.sent();
-                return [3 /*break*/, 13];
+                _c.sent();
+                return [3 /*break*/, 12];
             case 11:
-                if (!message.answer) return [3 /*break*/, 13];
-                return [4 /*yield*/, peerConnection.setRemoteDescription(new RTCSessionDescription(message.answer))];
-            case 12:
-                _b.sent();
-                _b.label = 13;
-            case 13: return [2 /*return*/];
-        }
-    });
-}); };
-var createOfferButton = document.getElementById("createOfferButton");
-createOfferButton === null || createOfferButton === void 0 ? void 0 : createOfferButton.addEventListener("click", function () { return __awaiter(_this, void 0, void 0, function () {
-    var offer;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, peerConnection.createOffer()];
-            case 1:
-                offer = _a.sent();
-                return [4 /*yield*/, peerConnection.setLocalDescription(offer)];
-            case 2:
-                _a.sent();
-                ws.send(JSON.stringify({ action: "offer", offer: offer, roomName: currentRoomName }));
-                return [2 /*return*/];
-        }
-    });
-}); });
-var createAnswerButton = document.getElementById("createAnswerButton");
-createAnswerButton.addEventListener("click", function () { return __awaiter(_this, void 0, void 0, function () {
-    var answer;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, peerConnection.createAnswer()];
-            case 1:
-                answer = _a.sent();
-                return [4 /*yield*/, peerConnection.setLocalDescription(answer)];
-            case 2:
-                _a.sent();
+                e_1 = _c.sent();
+                console.error("Error adding received ice candidate", e_1);
+                return [3 /*break*/, 12];
+            case 12: return [3 /*break*/, 22];
+            case 13:
+                if (!message.fromId) return [3 /*break*/, 17];
+                peerConnectionForOffer = createPeerConnection(message.fromId);
+                return [4 /*yield*/, peerConnectionForOffer.setRemoteDescription(new RTCSessionDescription(message.offer))];
+            case 14:
+                _c.sent();
+                return [4 /*yield*/, peerConnectionForOffer.createAnswer()];
+            case 15:
+                answer = _c.sent();
+                return [4 /*yield*/, peerConnectionForOffer.setLocalDescription(answer)];
+            case 16:
+                _c.sent();
                 ws.send(JSON.stringify({
                     action: "answer",
                     answer: answer,
                     roomName: currentRoomName,
+                    targetId: message.fromId,
                 }));
-                createAnswerButton.disabled = true;
-                return [2 /*return*/];
+                _c.label = 17;
+            case 17: return [3 /*break*/, 22];
+            case 18:
+                if (!message.fromId) return [3 /*break*/, 20];
+                peerConnectionForAnswer = peerConnections[message.fromId].peerConnection;
+                return [4 /*yield*/, peerConnectionForAnswer.setRemoteDescription(new RTCSessionDescription(message.answer))];
+            case 19:
+                _c.sent();
+                _c.label = 20;
+            case 20: return [3 /*break*/, 22];
+            case 21:
+                console.log("Unknown action:", message.action);
+                _c.label = 22;
+            case 22: return [2 /*return*/];
         }
     });
-}); });
+}); };
 var showMessage = function (message) {
     var chatDiv = document.getElementById("chat");
     if (chatDiv) {
@@ -194,8 +344,11 @@ var sendButton = document.getElementById("sendButton");
 sendButton === null || sendButton === void 0 ? void 0 : sendButton.addEventListener("click", function () {
     var messageInput = document.getElementById("messageInput");
     var message = messageInput.value;
-    if (message && dataChannel.readyState === "open") {
-        dataChannel.send(message);
-        messageInput.value = "";
-    }
+    Object.values(peerConnections).forEach(function (_a) {
+        var dataChannel = _a.dataChannel;
+        if (dataChannel.readyState === "open") {
+            dataChannel.send(message);
+        }
+    });
+    messageInput.value = "";
 });
