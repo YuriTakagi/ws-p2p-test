@@ -1,10 +1,8 @@
 import * as http from "http";
-import * as fs from "fs";
-import * as path from "path";
 import WebSocket, { WebSocketServer } from "ws";
 import { v4 as uuidv4 } from "uuid";
 
-const port = 8080;
+const port = 8081;
 
 type Client = {
   ws: WebSocket;
@@ -19,37 +17,6 @@ type Room = {
 
 let rooms: Room[] = [];
 
-// HTTPサーバー
-const createHttpServer = () => {
-  return http.createServer((request, response) => {
-    switch (request.url) {
-      case "/":
-      case "/index.html":
-        serveFile("../client/index.html", "text/html", response);
-        break;
-      case "/client.js":
-        serveFile("../client/client.js", "application/javascript", response);
-        break;
-      default:
-        response.writeHead(404);
-        response.end();
-    }
-  });
-};
-
-// ファイル処理
-const serveFile = (
-  filePath: string,
-  contentType: string,
-  response: http.ServerResponse
-) => {
-  const fullPath = path.join(__dirname, filePath);
-  const readStream = fs.createReadStream(fullPath);
-  response.writeHead(200, { "Content-Type": contentType });
-  readStream.pipe(response);
-};
-
-// WebSocketサーバー(シグナリングサーバー)
 const setupWebSocketServer = (server: http.Server) => {
   const wss = new WebSocketServer({ server });
   wss.on("connection", (ws) => {
@@ -112,7 +79,6 @@ const joinRoom = (
   if (room) {
     console.log(`Client: ${client.id}, joined room: ${roomName}`);
     room.clients.set(client.id, client.ws);
-    // 新しいクライアントに既存のクライアントのリストを送信
     const existingClients = Array.from(room.clients.keys());
     client.ws.send(
       JSON.stringify({
@@ -122,10 +88,8 @@ const joinRoom = (
       })
     );
 
-    // 既存のクライアントに新しいクライアントの参加を通知
     room.clients.forEach((ws, id) => {
       if (id !== client.id) {
-        // 新しいクライアント自身を除外
         ws.send(
           JSON.stringify({ action: "newClientJoined", clientId: client.id })
         );
@@ -215,9 +179,9 @@ const handleDisconnect = (client: Client) => {
   });
 };
 
-const server = createHttpServer();
+const server = http.createServer();
 setupWebSocketServer(server);
 
 server.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+  console.log(`WebSocket Server is running on ws://localhost:${port}`);
 });

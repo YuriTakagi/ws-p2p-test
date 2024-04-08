@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "dev": "npx ts-node server/server.ts",
+    "start:http": "npx ts-node server/http-server.ts",
+    "start:ws": "npx ts-node server/websocket-server.ts",
     "build": "tsc client/client.ts --outDir client"
   },
   "devDependencies": {
