@@ -92,12 +92,13 @@ ws.onmessage = function (event) { return __awaiter(_this, void 0, void 0, functi
                     case "iceCandidate": return [3 /*break*/, 8];
                     case "offer": return [3 /*break*/, 13];
                     case "answer": return [3 /*break*/, 18];
+                    case "error": return [3 /*break*/, 21];
                 }
-                return [3 /*break*/, 21];
+                return [3 /*break*/, 22];
             case 4:
                 console.log(message);
                 currentRoomName = message.roomName;
-                return [3 /*break*/, 22];
+                return [3 /*break*/, 23];
             case 5:
                 newClientId = message.clientId;
                 peerConnectionForNewClient = createPeerConnection(newClientId);
@@ -113,7 +114,7 @@ ws.onmessage = function (event) { return __awaiter(_this, void 0, void 0, functi
                     roomName: currentRoomName,
                     targetId: newClientId,
                 }));
-                return [3 /*break*/, 22];
+                return [3 /*break*/, 23];
             case 8:
                 if (!message.fromId) return [3 /*break*/, 12];
                 peerConnectionForIceCandidate = peerConnections[message.fromId].peerConnection;
@@ -128,7 +129,7 @@ ws.onmessage = function (event) { return __awaiter(_this, void 0, void 0, functi
                 e_1 = _c.sent();
                 console.error("Error adding received ice candidate", e_1);
                 return [3 /*break*/, 12];
-            case 12: return [3 /*break*/, 22];
+            case 12: return [3 /*break*/, 23];
             case 13:
                 if (!message.fromId) return [3 /*break*/, 17];
                 peerConnectionForOffer = createPeerConnection(message.fromId);
@@ -148,7 +149,7 @@ ws.onmessage = function (event) { return __awaiter(_this, void 0, void 0, functi
                     targetId: message.fromId,
                 }));
                 _c.label = 17;
-            case 17: return [3 /*break*/, 22];
+            case 17: return [3 /*break*/, 23];
             case 18:
                 if (!message.fromId) return [3 /*break*/, 20];
                 peerConnectionForAnswer = peerConnections[message.fromId].peerConnection;
@@ -156,11 +157,14 @@ ws.onmessage = function (event) { return __awaiter(_this, void 0, void 0, functi
             case 19:
                 _c.sent();
                 _c.label = 20;
-            case 20: return [3 /*break*/, 22];
+            case 20: return [3 /*break*/, 23];
             case 21:
+                alert("\u30A8\u30E9\u30FC: ".concat(message.message));
+                return [3 /*break*/, 23];
+            case 22:
                 console.log("Unknown action:", message.action);
-                _c.label = 22;
-            case 22: return [2 /*return*/];
+                _c.label = 23;
+            case 23: return [2 /*return*/];
         }
     });
 }); };

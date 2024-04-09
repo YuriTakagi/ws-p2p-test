@@ -109,6 +109,9 @@ ws.onmessage = async (event) => {
         );
       }
       break;
+    case "error":
+      alert(`エラー: ${message.message}`)
+      break;
     default:
       console.log("Unknown action:", message.action);
   }

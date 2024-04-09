@@ -55,6 +55,15 @@ const createRoom = (
   client: Client,
   { roomName, roomPassword }: { roomName: string; roomPassword: string }
 ) => {
+  const roomExists = rooms.some(
+    (room) => room.name === roomName && room.password === roomPassword
+  );
+  if (roomExists) {
+    client.ws.send(
+      JSON.stringify({ action: "error", message: "Same Room already exists" })
+    );
+    return;
+  }
   console.log(
     `Client: ${client.id}, created room: ${roomName}, password: ${roomPassword}`
   );
