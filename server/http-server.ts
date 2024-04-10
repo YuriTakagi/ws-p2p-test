@@ -22,7 +22,6 @@ const createHttpServer = () => {
   });
 };
 
-
 const serveFile = (
   filePath: string,
   contentType: string,
@@ -30,6 +29,11 @@ const serveFile = (
 ) => {
   const fullPath = path.join(__dirname, filePath);
   const readStream = fs.createReadStream(fullPath);
+  readStream.on("error", (error) => {
+    console.error(`Error read file ${fullPath}:`, error);
+    response.writeHead(500);
+    response.end("Internal Server Error");
+  });
   response.writeHead(200, { "Content-Type": contentType });
   readStream.pipe(response);
 };
