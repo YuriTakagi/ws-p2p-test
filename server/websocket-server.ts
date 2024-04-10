@@ -23,13 +23,22 @@ const setupWebSocketServer = (server: http.Server) => {
     const clientId = uuidv4();
     const client: Client = { ws, id: clientId };
     console.log(`Client ${client.id} connected`);
+    ws.on("error", (error) =>
+      console.error(`WebSocket error for client ${clientId}:`, error)
+    );
     ws.on("message", (message) => handleMessage(client, message.toString()));
     ws.on("close", () => handleDisconnect(client));
   });
 };
 
 const handleMessage = (client: Client, message: string) => {
-  const parsedMessage = JSON.parse(message);
+  let parsedMessage;
+  try {
+    parsedMessage = JSON.parse(message);
+  } catch (error) {
+    console.error("Error parsing message:", error);
+    return;
+  }
   switch (parsedMessage.action) {
     case "createRoom":
       createRoom(client, parsedMessage);
